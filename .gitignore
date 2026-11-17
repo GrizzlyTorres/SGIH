@@ -1,0 +1,25 @@
+# Cache e arquivos compilados do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ambientes virtuais (caso crie algum futuramente)
+venv/
+.venv/
+env/
+
+# Configurações locais do VS Code
+.vscode/
+
+# Arquivos temporários do SQLite
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Relatórios e termos gerados durante os testes locais
+exports/*.txt
+exports/*.csv
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
