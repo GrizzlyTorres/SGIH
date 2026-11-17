@@ -395,7 +395,7 @@ class SGIHApp(tk.Tk):
         frame_tree, self.tree_colab = self._criar_tree(tab, cols, larguras, altura=13)
         frame_tree.pack(fill="both", expand=True, padx=10, pady=5)
 
-        ttk.Button(tab, text="Inativar Selecionado (FA1 - Exclusão Lógica)", style="Danger.TButton",
+        ttk.Button(tab, text="Inativar Selecionado (Exclusão Lógica)", style="Danger.TButton",
                    command=self.inativar_colaborador).pack(pady=6)
 
     def _limpar_form_colaborador(self):
@@ -516,7 +516,7 @@ class SGIHApp(tk.Tk):
 
         baixa_frame = ttk.Frame(tab)
         baixa_frame.pack(fill="x", padx=10, pady=4)
-        ttk.Label(baixa_frame, text="Motivo da Baixa (FA1):*").pack(side="left", padx=4)
+        ttk.Label(baixa_frame, text="Motivo da Baixa:*").pack(side="left", padx=4)  # FA1
         self.ent_motivo_baixa = ttk.Entry(baixa_frame, width=40)
         self.ent_motivo_baixa.pack(side="left", padx=4)
         ttk.Button(baixa_frame, text="Registrar Baixa Patrimonial", style="Danger.TButton",
@@ -535,7 +535,7 @@ class SGIHApp(tk.Tk):
         frame_lic.pack(fill="x", padx=10, pady=4)
         self.tree_lic.tag_configure("sem_assento", foreground=COLORS["danger"])
 
-        ttk.Button(tab, text="Vincular 1 Assento da Licença Selecionada (FA2)",
+        ttk.Button(tab, text="Vincular 1 Assento da Licença Selecionada",  # FA2
                    command=self.consumir_licenca).pack(pady=4)
 
     @staticmethod
@@ -689,7 +689,7 @@ class SGIHApp(tk.Tk):
 
         self.var_avaria = tk.BooleanVar(value=False)
         self.chk_avaria = ttk.Checkbutton(
-            box, text="Devolução com Avaria (FA2: encaminha automaticamente para Ordem de Manutenção)",
+            box, text="Devolução com Avaria (encaminha automaticamente para Ordem de Manutenção)",  # FA2
             variable=self.var_avaria, state="disabled",
         )
         self.chk_avaria.grid(row=4, column=1, sticky="w", pady=6)
@@ -819,7 +819,7 @@ class SGIHApp(tk.Tk):
 
         ttk.Button(bottom, text="Avaliar e Fechar",
                    command=lambda: self.avaliar_chamado("Fechar")).grid(row=1, column=2, padx=4)
-        ttk.Button(bottom, text="Reabrir Chamado (FA1)", style="Danger.TButton",
+        ttk.Button(bottom, text="Reabrir Chamado", style="Danger.TButton",  # FA1
                    command=lambda: self.avaliar_chamado("Reabrir")).grid(row=1, column=3, padx=4)
 
     @staticmethod
