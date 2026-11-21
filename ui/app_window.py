@@ -42,12 +42,24 @@ class SGIHApp(tk.Tk):
         self.minsize(1040, 640)
         self.configure(bg=COLORS["bg"])
 
-        # Caches locais usados pelos filtros de busca de cada tabela
+        # Caches locais usados pelos filtros de busca e combos dependentes
         self._dados_colab = []
         self._dados_ativos = []
+        self._lista_ativos_raw = []
         self._dados_licencas = []
         self._dados_chamados = []
         self._dados_om = []
+
+        self.map_setores = {}
+        self.map_cat_ativo = {}
+        self.map_fornecedores = {}
+        self.map_ativos = {}
+        self.map_colabs = {}
+        self.map_sol = {}
+        self.map_cat_chamado = {}
+        self.map_ativos_chamado = {}
+        self.map_tec = {}
+        self.map_om_ativos = {}
 
         self._configurar_estilo()
         self._construir_menu()
@@ -89,7 +101,7 @@ class SGIHApp(tk.Tk):
         style.configure("TLabel", background=COLORS["bg"], foreground="#1f2937")
         style.configure("TLabelframe", background=COLORS["bg"], bordercolor=COLORS["border"])
         style.configure("TLabelframe.Label", background=COLORS["bg"], font=(FONTE, 10, "bold"),
-                         foreground=COLORS["primary_dark"])
+                        foreground=COLORS["primary_dark"])
 
         style.configure("TNotebook", background=COLORS["bg"], borderwidth=0)
         style.configure("TNotebook.Tab", font=(FONTE, 10, "bold"), padding=(14, 9))
@@ -104,9 +116,9 @@ class SGIHApp(tk.Tk):
         style.map("Danger.TButton", background=[("active", "#7f1d1d")])
 
         style.configure("Treeview", font=(FONTE, 9), rowheight=25,
-                         background=COLORS["surface"], fieldbackground=COLORS["surface"])
+                        background=COLORS["surface"], fieldbackground=COLORS["surface"])
         style.configure("Treeview.Heading", font=(FONTE, 9, "bold"),
-                         background=COLORS["header_bg"], foreground="white", relief="flat")
+                        background=COLORS["header_bg"], foreground="white", relief="flat")
         style.map("Treeview.Heading", background=[("active", COLORS["primary_dark"])])
         style.map("Treeview", background=[("selected", COLORS["primary"])],
                   foreground=[("selected", "white")])
@@ -148,7 +160,7 @@ class SGIHApp(tk.Tk):
         barra = tk.Frame(self, bg=COLORS["header_bg"], height=26)
         barra.pack(fill="x", side="bottom")
         self.lbl_status = tk.Label(barra, text="Pronto.", bg=COLORS["header_bg"], fg="white",
-                                    font=(FONTE, 8), anchor="w")
+                                   font=(FONTE, 8), anchor="w")
         self.lbl_status.pack(side="left", padx=10)
         self.lbl_hora = tk.Label(barra, text="", bg=COLORS["header_bg"], fg="#9ca3af", font=(FONTE, 8))
         self.lbl_hora.pack(side="right", padx=10)
@@ -236,7 +248,7 @@ class SGIHApp(tk.Tk):
                     primeiro_widget = widget
         if faltando:
             messagebox.showwarning("Campos obrigatórios",
-                                    "Preencha os campos obrigatórios: " + ", ".join(faltando) + ".")
+                                   "Preencha os campos obrigatórios: " + ", ".join(faltando) + ".")
             if primeiro_widget is not None:
                 primeiro_widget.focus_set()
             return False
@@ -287,7 +299,7 @@ class SGIHApp(tk.Tk):
         self.lbl_kpis_sub = {}
         for idx, (chave, titulo, icone, cor) in enumerate(cartoes):
             cartao = tk.Frame(self.kpi_frame, bg=COLORS["surface"],
-                               highlightbackground=COLORS["border"], highlightthickness=1)
+                              highlightbackground=COLORS["border"], highlightthickness=1)
             cartao.grid(row=idx // 3, column=idx % 3, padx=8, pady=8, sticky="nsew")
             self.kpi_frame.columnconfigure(idx % 3, weight=1)
 
@@ -366,7 +378,7 @@ class SGIHApp(tk.Tk):
 
         ttk.Label(form, text="Perfil:").grid(row=1, column=0, padx=5, pady=4, sticky="w")
         self.cb_col_perfil = ttk.Combobox(form, values=["Colaborador", "Tecnico", "Administrador"],
-                                           state="readonly", width=25)
+                                          state="readonly", width=25)
         self.cb_col_perfil.set("Colaborador")
         self.cb_col_perfil.grid(row=1, column=1, padx=5)
 
@@ -457,7 +469,7 @@ class SGIHApp(tk.Tk):
         valores = self.tree_colab.item(sel[0])["values"]
         colab_id, nome = valores[0], valores[1]
         if not messagebox.askyesno("Confirmar Inativação",
-                                    f"Inativar o colaborador '{nome}'?\nO histórico será preservado."):
+                                   f"Inativar o colaborador '{nome}'?\nO histórico será preservado."):
             return
         try:
             SGIHService.inativar_colaborador(colab_id)
@@ -491,12 +503,20 @@ class SGIHApp(tk.Tk):
         self.ent_modelo.grid(row=0, column=5, padx=4)
 
         ttk.Label(form, text="Fabricante:*").grid(row=0, column=6, padx=4, sticky="w")
-        self.ent_fab = ttk.Entry(form, width=15)
+        self.ent_fab = ttk.Entry(form, width=16)
         self.ent_fab.grid(row=0, column=7, padx=4)
 
         ttk.Label(form, text="Valor (R$):*").grid(row=1, column=0, padx=4, pady=5, sticky="w")
         self.ent_valor = ttk.Entry(form, width=14)
         self.ent_valor.grid(row=1, column=1, padx=4)
+
+        ttk.Label(form, text="Categoria:*").grid(row=1, column=2, padx=4, pady=5, sticky="w")
+        self.cb_at_cat = ttk.Combobox(form, state="readonly", width=18)
+        self.cb_at_cat.grid(row=1, column=3, padx=4)
+
+        ttk.Label(form, text="Fornecedor:*").grid(row=1, column=4, padx=4, pady=5, sticky="w")
+        self.cb_at_forn = ttk.Combobox(form, state="readonly", width=22)
+        self.cb_at_forn.grid(row=1, column=5, padx=4)
 
         ttk.Button(form, text="Cadastrar Hardware", style="Primary.TButton",
                    command=self.cadastrar_ativo).grid(row=1, column=7, padx=4, sticky="e")
@@ -550,10 +570,19 @@ class SGIHApp(tk.Tk):
             return None
 
     def atualizar_ativos_licencas(self):
+        _, categorias, fornecedores = SGIHService.listar_auxiliares()
+        cats_ativo = [c for c in categorias if c["tipo"] == "Ativo"] or categorias
+        self.map_cat_ativo = {f"{c['id']} - {c['nome']}": c["id"] for c in cats_ativo}
+        self._repopular_combo(self.cb_at_cat, list(self.map_cat_ativo.keys()), selecionar_primeiro=True)
+
+        self.map_fornecedores = {f"{f['id']} - {f['razao_social']}": f["id"] for f in fornecedores}
+        self._repopular_combo(self.cb_at_forn, list(self.map_fornecedores.keys()), selecionar_primeiro=True)
+
+        self._lista_ativos_raw = SGIHService.listar_ativos()
         self._dados_ativos = [
             (a["id"], a["patrimonio"], a["num_serie"], a["modelo"], a["fabricante"],
              a["status"], a["responsavel_nome"] or "-")
-            for a in SGIHService.listar_ativos()
+            for a in self._lista_ativos_raw
         ]
         self._filtrar_ativos()
 
@@ -590,14 +619,23 @@ class SGIHApp(tk.Tk):
             (fabricante, "Fabricante", self.ent_fab),
         ]):
             return
-        if self._parse_numero(self.ent_valor.get()) is None:
+        valor_num = self._parse_numero(self.ent_valor.get())
+        if valor_num is None:
             messagebox.showwarning("Valor inválido", "Informe um valor numérico válido, ex: 1500,00")
             self.ent_valor.focus_set()
             return
+        categoria_id = self.map_cat_ativo.get(self.cb_at_cat.get())
+        if self.map_cat_ativo and categoria_id is None:
+            messagebox.showwarning("Campo obrigatório", "Selecione uma categoria de ativo.")
+            return
+        fornecedor_id = self.map_fornecedores.get(self.cb_at_forn.get())
+        if self.map_fornecedores and fornecedor_id is None:
+            messagebox.showwarning("Campo obrigatório", "Selecione um fornecedor.")
+            return
         try:
-            # Os parâmetros fixos "1, 1" após o fabricante correspondem a IDs padrão
-            # (categoria/fornecedor) já utilizados na versão original do serviço.
-            SGIHService.cadastrar_ativo(patrimonio, serie, modelo, fabricante, 1, 1, self.ent_valor.get())
+            SGIHService.cadastrar_ativo(
+                patrimonio, serie, modelo, fabricante, categoria_id, fornecedor_id, valor_num
+            )
             for campo in (self.ent_pat, self.ent_serie, self.ent_modelo, self.ent_fab, self.ent_valor):
                 campo.delete(0, "end")
             self.atualizar_tudo()
@@ -673,7 +711,7 @@ class SGIHApp(tk.Tk):
 
         ttk.Label(box, text="Operação:").grid(row=1, column=0, sticky="w", pady=6)
         self.cb_mov_tipo = ttk.Combobox(box, values=["Alocação", "Empréstimo", "Devolução"],
-                                         state="readonly", width=48)
+                                        state="readonly", width=48)
         self.cb_mov_tipo.set("Alocação")
         self.cb_mov_tipo.grid(row=1, column=1, padx=8, pady=6)
         self.cb_mov_tipo.bind("<<ComboboxSelected>>", self._ao_mudar_tipo_movimentacao)
@@ -710,7 +748,7 @@ class SGIHApp(tk.Tk):
             self.var_avaria.set(False)
 
     def atualizar_combos_movimentacao(self):
-        ativos = SGIHService.listar_ativos()
+        ativos = self._lista_ativos_raw or SGIHService.listar_ativos()
         self.map_ativos = {
             f"{a['id']} - {a['patrimonio']} ({a['modelo']}) [{a['status']}]": a["id"] for a in ativos
         }
@@ -770,75 +808,111 @@ class SGIHApp(tk.Tk):
         top = ttk.LabelFrame(tab, text="Abrir Novo Chamado", padding=8)
         top.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(top, text="Solicitante:*").grid(row=0, column=0, padx=4)
-        self.cb_ch_sol = ttk.Combobox(top, state="readonly", width=25)
-        self.cb_ch_sol.grid(row=0, column=1, padx=4)
+        ttk.Label(top, text="Solicitante:*").grid(row=0, column=0, padx=4, pady=3, sticky="w")
+        self.cb_ch_sol = ttk.Combobox(top, state="readonly", width=26)
+        self.cb_ch_sol.grid(row=0, column=1, padx=4, pady=3, sticky="w")
+        self.cb_ch_sol.bind("<<ComboboxSelected>>", self._ao_mudar_solicitante_chamado)
 
-        ttk.Label(top, text="Urgência:").grid(row=0, column=2, padx=4)
+        ttk.Label(top, text="Categoria:*").grid(row=0, column=2, padx=4, pady=3, sticky="w")
+        self.cb_ch_cat = ttk.Combobox(top, state="readonly", width=26)
+        self.cb_ch_cat.grid(row=0, column=3, padx=4, pady=3, sticky="w")
+
+        ttk.Label(top, text="Urgência:").grid(row=0, column=4, padx=4, pady=3, sticky="w")
         self.cb_ch_urg = ttk.Combobox(top, values=["Baixa", "Média", "Alta", "Crítica"],
-                                       state="readonly", width=12)
+                                      state="readonly", width=12)
         self.cb_ch_urg.set("Média")
-        self.cb_ch_urg.grid(row=0, column=3, padx=4)
+        self.cb_ch_urg.grid(row=0, column=5, padx=4, pady=3, sticky="w")
 
-        ttk.Label(top, text="Descrição:*").grid(row=0, column=4, padx=4)
-        self.ent_ch_desc = ttk.Entry(top, width=38)
-        self.ent_ch_desc.grid(row=0, column=5, padx=4)
+        ttk.Label(top, text="Ativo (opcional):").grid(row=1, column=0, padx=4, pady=3, sticky="w")
+        self.cb_ch_ativo = ttk.Combobox(top, state="readonly", width=26)
+        self.cb_ch_ativo.grid(row=1, column=1, padx=4, pady=3, sticky="w")
+
+        ttk.Label(top, text="Descrição:*").grid(row=1, column=2, padx=4, pady=3, sticky="w")
+        self.ent_ch_desc = ttk.Entry(top, width=46)
+        self.ent_ch_desc.grid(row=1, column=3, columnspan=3, padx=4, pady=3, sticky="we")
         self.ent_ch_desc.bind("<Return>", lambda e: self.abrir_chamado())
 
         ttk.Button(top, text="Registrar Chamado", style="Primary.TButton",
-                   command=self.abrir_chamado).grid(row=0, column=6, padx=6)
+                   command=self.abrir_chamado).grid(row=1, column=6, padx=6, pady=3)
 
         busca_ch, self.var_busca_chamados = self._criar_busca(tab)
         busca_ch.pack(anchor="w", padx=12, pady=(2, 2))
         self.var_busca_chamados.trace_add("write", lambda *_: self._filtrar_chamados())
 
-        cols = ("ID", "Protocolo", "Solicitante", "Urgência", "Status", "Prazo SLA", "Solução", "Nota")
-        larguras = (40, 110, 130, 75, 110, 120, 220, 45)
-        frame_ch, self.tree_chamados = self._criar_tree(tab, cols, larguras, altura=10)
+        cols = ("ID", "Protocolo", "Solicitante", "Ativo", "Urgência", "Status", "Prazo SLA", "Solução", "Nota")
+        larguras = (40, 110, 130, 85, 75, 110, 115, 200, 45)
+        frame_ch, self.tree_chamados = self._criar_tree(tab, cols, larguras, altura=9)
         frame_ch.pack(fill="both", expand=True, padx=10, pady=5)
         self.tree_chamados.tag_configure("urgencia_alta", foreground=COLORS["danger"])
         self.tree_chamados.tag_configure("status_resolvido", foreground=COLORS["success"])
         self.tree_chamados.bind("<<TreeviewSelect>>", self._ao_selecionar_chamado)
 
-        bottom = ttk.LabelFrame(tab, text="Atendimento Técnico e Avaliação/Reabertura ", padding=8)
+        bottom = ttk.LabelFrame(tab, text="Atendimento Técnico e Avaliação/Reabertura", padding=8)
         bottom.pack(fill="x", padx=10, pady=6)
 
-        ttk.Label(bottom, text="Parecer / Solução:").grid(row=0, column=0, padx=4)
-        self.ent_ch_solucao = ttk.Entry(bottom, width=42)
-        self.ent_ch_solucao.grid(row=0, column=1, padx=4)
+        ttk.Label(bottom, text="Técnico:*").grid(row=0, column=0, padx=4, sticky="w")
+        self.cb_ch_tec = ttk.Combobox(bottom, state="readonly", width=24)
+        self.cb_ch_tec.grid(row=0, column=1, padx=4, sticky="w")
+
+        ttk.Label(bottom, text="Parecer / Solução:").grid(row=0, column=2, padx=4, sticky="w")
+        self.ent_ch_solucao = ttk.Entry(bottom, width=36)
+        self.ent_ch_solucao.grid(row=0, column=3, padx=4)
 
         ttk.Button(bottom, text="Colocar Em Atendimento",
-                   command=lambda: self.atualizar_chamado("Em Atendimento")).grid(row=0, column=2, padx=4)
+                   command=lambda: self.atualizar_chamado("Em Atendimento")).grid(row=0, column=4, padx=4)
         ttk.Button(bottom, text="Marcar como Resolvido", style="Primary.TButton",
-                   command=lambda: self.atualizar_chamado("Resolvido")).grid(row=0, column=3, padx=4)
+                   command=lambda: self.atualizar_chamado("Resolvido")).grid(row=0, column=5, padx=4)
 
-        ttk.Label(bottom, text="Nota (1-5):").grid(row=1, column=0, padx=4, pady=6)
+        ttk.Label(bottom, text="Nota (1-5):").grid(row=1, column=0, padx=4, pady=6, sticky="w")
         self.cb_ch_nota = ttk.Combobox(bottom, values=[5, 4, 3, 2, 1], state="readonly", width=5)
         self.cb_ch_nota.set(5)
         self.cb_ch_nota.grid(row=1, column=1, sticky="w", padx=4)
 
         ttk.Button(bottom, text="Avaliar e Fechar",
-                   command=lambda: self.avaliar_chamado("Fechar")).grid(row=1, column=2, padx=4)
+                   command=lambda: self.avaliar_chamado("Fechar")).grid(row=1, column=4, padx=4)
         ttk.Button(bottom, text="Reabrir Chamado", style="Danger.TButton",  # FA1
-                   command=lambda: self.avaliar_chamado("Reabrir")).grid(row=1, column=3, padx=4)
+                   command=lambda: self.avaliar_chamado("Reabrir")).grid(row=1, column=5, padx=4)
 
     @staticmethod
     def _tag_chamado(valores):
-        urgencia, status = valores[3], valores[4]
+        urgencia, status = valores[4], valores[5]
         if status in ("Resolvido", "Fechado"):
             return "status_resolvido"
         if urgencia in ("Alta", "Crítica"):
             return "urgencia_alta"
         return None
 
+    def _ao_mudar_solicitante_chamado(self, event=None):
+        """Exibe no combo os ativos sob custódia do solicitante selecionado (UC04 / R9)."""
+        sol_id = self.map_sol.get(self.cb_ch_sol.get())
+        ativos = self._lista_ativos_raw or SGIHService.listar_ativos()
+        self.map_ativos_chamado = {"Nenhum (sem ativo vinculado)": None}
+        for a in ativos:
+            if sol_id is not None and a["colaborador_id"] == sol_id and a["status"] != "Baixado":
+                self.map_ativos_chamado[f"{a['id']} - {a['patrimonio']} ({a['modelo']})"] = a["id"]
+        self._repopular_combo(self.cb_ch_ativo, list(self.map_ativos_chamado.keys()), selecionar_primeiro=True)
+
     def atualizar_chamados(self):
         colabs = SGIHService.listar_colaboradores()
         self.map_sol = {f"{c['id']} - {c['nome']}": c["id"] for c in colabs}
         self._repopular_combo(self.cb_ch_sol, list(self.map_sol.keys()), selecionar_primeiro=True)
 
+        _, categorias, _ = SGIHService.listar_auxiliares()
+        cats_chamado = [c for c in categorias if c["tipo"] == "Chamado"] or categorias
+        self.map_cat_chamado = {
+            f"{c['id']} - {c['nome']} (SLA: {c['sla_horas']}h)": c["id"] for c in cats_chamado
+        }
+        self._repopular_combo(self.cb_ch_cat, list(self.map_cat_chamado.keys()), selecionar_primeiro=True)
+
+        tecnicos = [c for c in colabs if c["perfil"] in ("Tecnico", "Administrador")] or colabs
+        self.map_tec = {f"{c['id']} - {c['nome']}": c["id"] for c in tecnicos}
+        self._repopular_combo(self.cb_ch_tec, list(self.map_tec.keys()), selecionar_primeiro=True)
+
+        self._ao_mudar_solicitante_chamado()
+
         self._dados_chamados = [
-            (ch["id"], ch["protocolo"], ch["solicitante_nome"], ch["urgencia"], ch["status"],
-             ch["prazo_sla"], ch["solucao"] or "-",
+            (ch["id"], ch["protocolo"], ch["solicitante_nome"], ch["ativo_patrimonio"] or "-",
+             ch["urgencia"], ch["status"], ch["prazo_sla"], ch["solucao"] or "-",
              ch["nota_avaliacao"] if ch["nota_avaliacao"] is not None else "-")
             for ch in SGIHService.listar_chamados()
         ]
@@ -857,7 +931,7 @@ class SGIHApp(tk.Tk):
         if not sel:
             return
         valores = self.tree_chamados.item(sel[0])["values"]
-        solucao, nota = valores[6], valores[7]
+        solucao, nota = valores[7], valores[8]
         self.ent_ch_solucao.delete(0, "end")
         if solucao and solucao != "-":
             self.ent_ch_solucao.insert(0, solucao)
@@ -871,7 +945,11 @@ class SGIHApp(tk.Tk):
         sol_sel = self.cb_ch_sol.get()
         if not sol_sel:
             messagebox.showwarning("Atenção",
-                                    "Cadastre e selecione um colaborador solicitante antes de abrir um chamado.")
+                                   "Cadastre e selecione um colaborador solicitante antes de abrir um chamado.")
+            return
+        cat_id = self.map_cat_chamado.get(self.cb_ch_cat.get())
+        if self.map_cat_chamado and cat_id is None:
+            messagebox.showwarning("Campo obrigatório", "Selecione uma categoria para o chamado.")
             return
         descricao = self.ent_ch_desc.get().strip()
         if not descricao:
@@ -879,9 +957,9 @@ class SGIHApp(tk.Tk):
             self.ent_ch_desc.focus_set()
             return
         sol_id = self.map_sol.get(sol_sel)
+        ativo_id = self.map_ativos_chamado.get(self.cb_ch_ativo.get())
         try:
-            # O "3" fixo corresponde à categoria padrão de chamado usada na versão original do serviço.
-            prot = SGIHService.abrir_chamado(sol_id, None, 3, self.cb_ch_urg.get(), descricao)
+            prot = SGIHService.abrir_chamado(sol_id, ativo_id, cat_id, self.cb_ch_urg.get(), descricao)
             self.ent_ch_desc.delete(0, "end")
             self.atualizar_tudo()
             self.definir_status(f"Chamado {prot} aberto.", "ok")
@@ -895,14 +973,17 @@ class SGIHApp(tk.Tk):
         if not sel:
             messagebox.showwarning("Atenção", "Selecione um chamado na tabela primeiro.")
             return
+        tec_id = self.map_tec.get(self.cb_ch_tec.get())
+        if tec_id is None:
+            messagebox.showwarning("Campo obrigatório", "Selecione um técnico responsável pelo atendimento.")
+            return
         if status == "Resolvido" and not self.ent_ch_solucao.get().strip():
             messagebox.showwarning("Campo obrigatório", "Descreva a solução antes de marcar como resolvido.")
             self.ent_ch_solucao.focus_set()
             return
         ch_id = self.tree_chamados.item(sel[0])["values"][0]
         try:
-            # O "2" fixo corresponde ao técnico padrão usado na versão original do serviço.
-            SGIHService.atender_resolver_chamado(ch_id, 2, status, self.ent_ch_solucao.get())
+            SGIHService.atender_resolver_chamado(ch_id, tec_id, status, self.ent_ch_solucao.get().strip())
             self.atualizar_tudo()
             self.definir_status(f"Chamado #{ch_id} atualizado para '{status}'.", "ok")
         except Exception as e:
@@ -920,7 +1001,7 @@ class SGIHApp(tk.Tk):
         ):
             return
         try:
-            SGIHService.avaliar_ou_reabrir_chamado(ch_id, acao, self.cb_ch_nota.get(), self.ent_ch_solucao.get())
+            SGIHService.avaliar_ou_reabrir_chamado(ch_id, acao, self.cb_ch_nota.get(), self.ent_ch_solucao.get().strip())
             self.atualizar_tudo()
             verbo = "fechado" if acao == "Fechar" else "reaberto"
             self.definir_status(f"Chamado #{ch_id} {verbo}.", "ok")
@@ -972,12 +1053,12 @@ class SGIHApp(tk.Tk):
 
         self.var_inviavel = tk.BooleanVar(value=False)
         ttk.Checkbutton(bottom, text="Perda Total / Inviável (Baixa Automática)",
-                         variable=self.var_inviavel).pack(side="left", padx=6)
+                        variable=self.var_inviavel).pack(side="left", padx=6)
         ttk.Button(bottom, text="Encerrar OM", style="Primary.TButton",
                    command=self.encerrar_om).pack(side="left", padx=6)
 
     def atualizar_manutencoes(self):
-        ativos = SGIHService.listar_ativos()
+        ativos = self._lista_ativos_raw or SGIHService.listar_ativos()
         self.map_om_ativos = {f"{a['id']} - {a['patrimonio']} ({a['modelo']})": a["id"] for a in ativos}
         self._repopular_combo(self.cb_om_ativo, list(self.map_om_ativos.keys()))
 
@@ -1020,7 +1101,8 @@ class SGIHApp(tk.Tk):
         if not sel:
             messagebox.showwarning("Atenção", "Selecione uma Ordem de Manutenção na tabela primeiro.")
             return
-        if self._parse_numero(self.ent_om_custo.get()) is None:
+        custo_num = self._parse_numero(self.ent_om_custo.get())
+        if custo_num is None:
             messagebox.showwarning("Valor inválido", "Informe um custo de reparo numérico válido, ex: 250,00")
             self.ent_om_custo.focus_set()
             return
@@ -1035,7 +1117,7 @@ class SGIHApp(tk.Tk):
             return
         om_id = self.tree_om.item(sel[0])["values"][0]
         try:
-            SGIHService.encerrar_ordem_manutencao(om_id, self.ent_om_custo.get(), parecer, self.var_inviavel.get())
+            SGIHService.encerrar_ordem_manutencao(om_id, custo_num, parecer, self.var_inviavel.get())
             self.ent_om_custo.delete(0, "end")
             self.ent_om_parecer.delete(0, "end")
             self.var_inviavel.set(False)
