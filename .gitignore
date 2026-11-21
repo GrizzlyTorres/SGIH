@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Ambientes virtuais (caso crie algum futuramente)
+# Ambientes virtuais 
 venv/
 .venv/
 env/
@@ -11,7 +11,9 @@ env/
 # Configurações locais do VS Code
 .vscode/
 
-# Arquivos temporários do SQLite
+# Banco de dados e arquivos temporários do SQLite
+*.db
+*.sqlite3
 *.db-journal
 *.db-wal
 *.db-shm
@@ -19,6 +21,7 @@ env/
 # Relatórios e termos gerados durante os testes locais
 exports/*.txt
 exports/*.csv
+exports/*.pdf
 
 # Arquivos de sistema operacional
 .DS_Store
